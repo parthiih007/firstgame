@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="game-card">
+    <h1>Login</h1>
+
+    <input id="user" placeholder="Username">
+    <input id="pass" type="password" placeholder="Password">
+
+    <button onclick="login()">Login</button>
+
+    <p style="margin-top:15px">
+      No account? <a href="register.html">Register</a>
+    </p>
+  </div>
+
+<script>
+function login() {
+  fetch('/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      username: user.value,
+      password: pass.value
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      location.href = 'index.html';
+    } else {
+      alert('Invalid login');
+    }
+  });
+}
+</script>
+</body>
+</html>
