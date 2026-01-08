@@ -1,71 +1,468 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Multiplayer Rock Paper Scissors</title>
-  <style>
-    body {
-      height: 100vh;
-      margin: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: linear-gradient(135deg, #7b4397, #dc2430);
-      font-family: Arial, sans-serif;
-      color: #fff;
-    }
-
-    .game-card {
-      background: rgba(255, 255, 255, 0.15);
-      padding: 30px;
-      border-radius: 20px;
-      width: 350px;
-      text-align: center;
-      backdrop-filter: blur(10px);
-    }
-
-    h1 {
-      margin-bottom: 10px;
-    }
-
-    #message {
-      margin-bottom: 20px;
-    }
-
-    .buttons button {
-      width: 100%;
-      padding: 12px;
-      margin: 8px 0;
-      border: none;
-      border-radius: 12px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    #result {
-      margin-top: 20px;
-      font-size: 18px;
-      font-weight: bold;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div class="user-info">
+    <span id="username">Loading...</span>
+    <button class="stats-btn" onclick="toggleStats()">📊 Stats</button>
+    <a href="/logout">Logout</a>
+  </div>
+
   <div class="game-card">
     <h1>🪨 📄 ✂</h1>
     <p id="message">Waiting for another player...</p>
 
     <div class="buttons">
-      <button onclick="play('rock')">Rock</button>
-      <button onclick="play('paper')">Paper</button>
-      <button onclick="play('scissors')">Scissors</button>
+      <button onclick="play('rock')">🪨 Rock</button>
+      <button onclick="play('paper')">📄 Paper</button>
+      <button onclick="play('scissors')">✂️ Scissors</button>
     </div>
 
     <div id="result"></div>
+  </div> -->
+
+  <!-- Stats Modal -->
+  <!-- <div id="statsModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="toggleStats()">&times;</span>
+      <h2>📊 Your Statistics</h2>
+      <div id="userStats" class="stats-container">
+        <div class="stat-item">
+          <div class="stat-label">Wins</div>
+          <div class="stat-value" id="winsCount">-</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Losses</div>
+          <div class="stat-value" id="lossesCount">-</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Draws</div>
+          <div class="stat-value" id="drawsCount">-</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Total Games</div>
+          <div class="stat-value" id="totalGames">-</div>
+        </div>
+      </div>
+
+      <h2>🏆 Leaderboard</h2>
+      <div id="leaderboard" class="leaderboard-container">
+        Loading...
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="game.js"></script>
+</body>
+</html> -->
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Rock Paper Scissors - Multiplayer Game</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body> -->
+  <!-- User Info Header -->
+  <!-- <div class="user-info">
+    <span id="username">Loading...</span>
+    <button class="stats-btn" onclick="toggleProfile()">👤 Profile</button>
+    <button class="stats-btn" onclick="toggleStats()">📊 Stats</button>
+    <a href="/logout">Logout</a>
+  </div> -->
+
+  <!-- Opponent Card (shown during game) -->
+  <!-- <div id="opponentCard" class="opponent-card" style="display: none;">
+    <h3>🎮 Playing Against</h3>
+    <div class="opponent-info">
+      <div class="opponent-name" id="opponentName">-</div>
+      <div class="opponent-email" id="opponentEmail">-</div>
+      <div class="opponent-stats">
+        <span class="stat-badge">🏆 <span id="opponentWins">0</span> Wins</span>
+        <span class="stat-badge">❌ <span id="opponentLosses">0</span> Losses</span>
+        <span class="stat-badge">😐 <span id="opponentDraws">0</span> Draws</span>
+      </div>
+    </div>
+  </div> -->
+
+  <!-- Main Game Card -->
+  <!-- <div class="game-card">
+    <h1>🪨 📄 ✂</h1>
+    <p id="message">Waiting for another player...</p>
+
+    <div class="buttons">
+      <button onclick="play('rock')">🪨 Rock</button>
+      <button onclick="play('paper')">📄 Paper</button>
+      <button onclick="play('scissors')">✂️ Scissors</button>
+    </div>
+
+    <div id="result"></div>
+  </div> -->
+
+  <!-- Profile Modal -->
+  <!-- <div id="profileModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="toggleProfile()">&times;</span>
+      <h2>👤 Your Profile</h2>
+      <div class="profile-container">
+        <div class="profile-item">
+          <div class="profile-label">Username</div>
+          <div class="profile-value" id="profileUsername">-</div>
+        </div>
+        <div class="profile-item">
+          <div class="profile-label">Email</div>
+          <div class="profile-value" id="profileEmail">-</div>
+        </div>
+        <div class="profile-item">
+          <div class="profile-label">Member Since</div>
+          <div class="profile-value" id="profileMemberSince">-</div>
+        </div>
+        <div class="profile-item">
+          <div class="profile-label">Total Games</div>
+          <div class="profile-value" id="profileTotalGames">-</div>
+        </div>
+        <div class="profile-stats-grid">
+          <div class="profile-stat-card">
+            <div class="profile-stat-value" id="profileWins">0</div>
+            <div class="profile-stat-label">🏆 Wins</div>
+          </div>
+          <div class="profile-stat-card">
+            <div class="profile-stat-value" id="profileLosses">0</div>
+            <div class="profile-stat-label">❌ Losses</div>
+          </div>
+          <div class="profile-stat-card">
+            <div class="profile-stat-value" id="profileDraws">0</div>
+            <div class="profile-stat-label">😐 Draws</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div> -->
+
+  <!-- Stats Modal -->
+  <!-- <div id="statsModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="toggleStats()">&times;</span>
+      <h2>📊 Your Statistics</h2>
+      <div class="stats-container">
+        <div class="stat-item">
+          <div class="stat-label">Wins</div>
+          <div class="stat-value" id="winsCount">-</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Losses</div>
+          <div class="stat-value" id="lossesCount">-</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Draws</div>
+          <div class="stat-value" id="drawsCount">-</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Total Games</div>
+          <div class="stat-value" id="totalGames">-</div>
+        </div>
+      </div>
+
+      <h2>🏆 Leaderboard</h2>
+      <div id="leaderboard" class="leaderboard-container">
+        Loading...
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="game.js"></script>
+</body>
+</html> -->
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Rock Paper Scissors - Multiplayer Game</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body> -->
+  <!-- User Info Header -->
+  <!-- <div class="user-info">
+    <span id="username">Loading...</span>
+    <button class="stats-btn" onclick="toggleProfile()">👤 Profile</button>
+    <button class="stats-btn" onclick="toggleStats()">📊 Stats</button>
+    <a href="/logout">Logout</a>
+  </div> -->
+
+  <!-- Opponent Card (shown during game) -->
+  <!-- <div id="opponentCard" class="opponent-card" style="display: none;">
+    <h3>🎮 Playing Against</h3>
+    <div class="opponent-info">
+      <div class="opponent-name" id="opponentName">-</div>
+      <div class="opponent-email" id="opponentEmail">-</div>
+      <div class="opponent-stats">
+        <span class="stat-badge">🏆 <span id="opponentWins">0</span> Wins</span>
+        <span class="stat-badge">❌ <span id="opponentLosses">0</span> Losses</span>
+        <span class="stat-badge">😐 <span id="opponentDraws">0</span> Draws</span>
+      </div>
+    </div> -->
+    
+    <!-- Chat Toggle Button -->
+    <!-- <button class="chat-toggle-btn" onclick="toggleChat()">💬 Chat</button>
+  </div> -->
+
+  <!-- Chat Box -->
+  <!-- <div id="chatBox" class="chat-box" style="display: none;">
+    <div class="chat-header">
+      <h3>💬 Chat</h3>
+      <span class="chat-close" onclick="toggleChat()">&times;</span>
+    </div>
+    <div id="chatMessages" class="chat-messages">
+      <div class="chat-loading">Loading chat history...</div>
+    </div>
+    <div class="chat-input-container">
+      <input 
+        type="text" 
+        id="chatInput" 
+        placeholder="Type a message..." 
+        maxlength="500"
+        onkeypress="handleChatKeyPress(event)"
+      >
+      <button onclick="sendChatMessage()">Send</button>
+    </div>
+  </div>
+
+  Main Game Card -->
+  <!-- <div class="game-card">
+    <h1>🪨 📄 ✂</h1>
+    <p id="message">Waiting for another player...</p>
+
+    <div class="buttons">
+      <button onclick="play('rock')">🪨 Rock</button>
+      <button onclick="play('paper')">📄 Paper</button>
+      <button onclick="play('scissors')">✂️ Scissors</button>
+    </div>
+
+    <div id="result"></div>
+  </div> -->
+
+  <!-- Profile Modal -->
+  <!-- <div id="profileModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="toggleProfile()">&times;</span>
+      <h2>👤 Your Profile</h2>
+      <div class="profile-container">
+        <div class="profile-item">
+          <div class="profile-label">Username</div>
+          <div class="profile-value" id="profileUsername">-</div>
+        </div>
+        <div class="profile-item">
+          <div class="profile-label">Email</div>
+          <div class="profile-value" id="profileEmail">-</div>
+        </div>
+        <div class="profile-item">
+          <div class="profile-label">Member Since</div>
+          <div class="profile-value" id="profileMemberSince">-</div>
+        </div>
+        <div class="profile-item">
+          <div class="profile-label">Total Games</div>
+          <div class="profile-value" id="profileTotalGames">-</div>
+        </div>
+        <div class="profile-stats-grid">
+          <div class="profile-stat-card">
+            <div class="profile-stat-value" id="profileWins">0</div>
+            <div class="profile-stat-label">🏆 Wins</div>
+          </div>
+          <div class="profile-stat-card">
+            <div class="profile-stat-value" id="profileLosses">0</div>
+            <div class="profile-stat-label">❌ Losses</div>
+          </div>
+          <div class="profile-stat-card">
+            <div class="profile-stat-value" id="profileDraws">0</div>
+            <div class="profile-stat-label">😐 Draws</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div> -->
+
+  <!-- Stats Modal -->
+  <!-- <div id="statsModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="toggleStats()">&times;</span>
+      <h2>📊 Your Statistics</h2>
+      <div class="stats-container">
+        <div class="stat-item">
+          <div class="stat-label">Wins</div>
+          <div class="stat-value" id="winsCount">-</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Losses</div>
+          <div class="stat-value" id="lossesCount">-</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Draws</div>
+          <div class="stat-value" id="drawsCount">-</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Total Games</div>
+          <div class="stat-value" id="totalGames">-</div>
+        </div>
+      </div>
+
+      <h2>🏆 Leaderboard</h2>
+      <div id="leaderboard" class="leaderboard-container">
+        Loading...
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="game.js"></script>
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Rock Paper Scissors - Multiplayer Game</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- User Info Header -->
+  <div class="user-info">
+    <span id="username">Loading...</span>
+    <button class="stats-btn" onclick="toggleProfile()">👤 Profile</button>
+    <button class="stats-btn" onclick="toggleStats()">📊 Stats</button>
+    <a href="/logout">Logout</a>
+  </div>
+
+  <!-- Opponent Card (shown during game) -->
+  <div id="opponentCard" class="opponent-card" style="display: none;">
+    <h3>🎮 Playing Against</h3>
+    <div class="opponent-info">
+      <div class="opponent-name" id="opponentName">-</div>
+      <div class="opponent-email" id="opponentEmail">-</div>
+      <div class="opponent-stats">
+        <span class="stat-badge">🏆 <span id="opponentWins">0</span> Wins</span>
+        <span class="stat-badge">❌ <span id="opponentLosses">0</span> Losses</span>
+        <span class="stat-badge">😐 <span id="opponentDraws">0</span> Draws</span>
+      </div>
+    </div>
+    
+    <!-- Chat Toggle Button -->
+    <button class="chat-toggle-btn" onclick="toggleChat()">💬 Chat</button>
+  </div>
+
+  <!-- Chat Box -->
+  <div id="chatBox" class="chat-box" style="display: none;">
+    <div class="chat-header">
+      <h3>💬 Chat</h3>
+      <span class="chat-close" onclick="toggleChat()">&times;</span>
+    </div>
+    <div id="chatMessages" class="chat-messages">
+      <div class="chat-loading">Loading chat history...</div>
+    </div>
+    <div class="chat-input-container">
+      <input 
+        type="text" 
+        id="chatInput" 
+        placeholder="Type a message..." 
+        maxlength="500"
+        onkeypress="handleChatKeyPress(event)"
+      >
+      <button onclick="sendChatMessage()" id="sendBtn">Send</button>
+    </div>
+  </div>
+
+  <!-- Main Game Card -->
+  <div class="game-card">
+    <h1>🪨 📄 ✂</h1>
+    <p id="message">Waiting for another player...</p>
+
+    <div class="buttons">
+      <button onclick="play('rock')">🪨 Rock</button>
+      <button onclick="play('paper')">📄 Paper</button>
+      <button onclick="play('scissors')">✂️ Scissors</button>
+    </div>
+
+    <div id="result"></div>
+  </div>
+
+  <!-- Profile Modal -->
+  <div id="profileModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="toggleProfile()">&times;</span>
+      <h2>👤 Your Profile</h2>
+      <div class="profile-container">
+        <div class="profile-item">
+          <div class="profile-label">Username</div>
+          <div class="profile-value" id="profileUsername">-</div>
+        </div>
+        <div class="profile-item">
+          <div class="profile-label">Email</div>
+          <div class="profile-value" id="profileEmail">-</div>
+        </div>
+        <div class="profile-item">
+          <div class="profile-label">Member Since</div>
+          <div class="profile-value" id="profileMemberSince">-</div>
+        </div>
+        <div class="profile-item">
+          <div class="profile-label">Total Games</div>
+          <div class="profile-value" id="profileTotalGames">-</div>
+        </div>
+        <div class="profile-stats-grid">
+          <div class="profile-stat-card">
+            <div class="profile-stat-value" id="profileWins">0</div>
+            <div class="profile-stat-label">🏆 Wins</div>
+          </div>
+          <div class="profile-stat-card">
+            <div class="profile-stat-value" id="profileLosses">0</div>
+            <div class="profile-stat-label">❌ Losses</div>
+          </div>
+          <div class="profile-stat-card">
+            <div class="profile-stat-value" id="profileDraws">0</div>
+            <div class="profile-stat-label">😐 Draws</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Modal -->
+  <div id="statsModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="toggleStats()">&times;</span>
+      <h2>📊 Your Statistics</h2>
+      <div class="stats-container">
+        <div class="stat-item">
+          <div class="stat-label">Wins</div>
+          <div class="stat-value" id="winsCount">-</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Losses</div>
+          <div class="stat-value" id="lossesCount">-</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Draws</div>
+          <div class="stat-value" id="drawsCount">-</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Total Games</div>
+          <div class="stat-value" id="totalGames">-</div>
+        </div>
+      </div>
+
+      <h2>🏆 Leaderboard</h2>
+      <div id="leaderboard" class="leaderboard-container">
+        Loading...
+      </div>
+    </div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>

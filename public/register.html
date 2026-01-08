@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html>
 <head>
   <title>Register</title>
@@ -38,6 +38,92 @@ function register() {
     }
   });
 }
+</script>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Register - Rock Paper Scissors</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="game-card">
+    <h1>📝 Register</h1>
+
+    <input id="user" placeholder="Username" autocomplete="username">
+    <input id="email" type="email" placeholder="Email Address" autocomplete="email">
+    <input id="pass" type="password" placeholder="Password (min 6 characters)" autocomplete="new-password">
+
+    <button onclick="register()">Register</button>
+
+    <p style="margin-top:15px; opacity: 0.9;">
+      Already have an account? <a href="login.html">Login here</a>
+    </p>
+  </div>
+
+<script>
+function register() {
+  const username = document.getElementById('user').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('pass').value;
+
+  if (!username || !email || !password) {
+    alert('Please fill in all fields');
+    return;
+  }
+
+  // Basic email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    alert('Please enter a valid email address');
+    return;
+  }
+
+  if (password.length < 6) {
+    alert('Password must be at least 6 characters');
+    return;
+  }
+
+  fetch('/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, email, password })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      alert('Registered successfully! Please login.');
+      window.location.href = 'login.html';
+    } else {
+      alert(data.message || 'Registration failed');
+    }
+  })
+  .catch(err => {
+    console.error('Registration error:', err);
+    alert('Registration failed. Please try again.');
+  });
+}
+
+// Allow Enter key to submit
+document.getElementById('pass').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') {
+    register();
+  }
+});
+
+document.getElementById('email').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') {
+    document.getElementById('pass').focus();
+  }
+});
+
+document.getElementById('user').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') {
+    document.getElementById('email').focus();
+  }
+});
 </script>
 </body>
 </html>

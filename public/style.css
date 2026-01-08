@@ -1,70 +1,644 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: 'Segoe UI', system-ui, sans-serif;
+/* ============ COLOR THEME OPTIONS ============ */
+/* Current: Purple/Red gradient theme */
+/* To change colors, comment current and uncomment desired theme below */
+
+/* THEME 1: Purple/Red (CURRENT - ACTIVE) */
+:root {
+  --primary-gradient-start: #7b4397;
+  --primary-gradient-end: #dc2430;
+  --accent-color: #ffd700;
+  --text-primary: #fff;
+  --card-bg: rgba(255, 255, 255, 0.15);
+  --button-bg: rgba(255, 255, 255, 0.9);
+  --button-color: #7b4397;
 }
+
+/* THEME 2: Blue/Cyan (Uncomment to use) */
+/*
+:root {
+  --primary-gradient-start: #2c3e50;
+  --primary-gradient-end: #3498db;
+  --accent-color: #00d4ff;
+  --text-primary: #fff;
+  --card-bg: rgba(255, 255, 255, 0.15);
+  --button-bg: rgba(255, 255, 255, 0.9);
+  --button-color: #2c3e50;
+}
+*/
+
+/* THEME 3: Green/Teal (Uncomment to use) */
+/*
+:root {
+  --primary-gradient-start: #11998e;
+  --primary-gradient-end: #38ef7d;
+  --accent-color: #ffeb3b;
+  --text-primary: #fff;
+  --card-bg: rgba(255, 255, 255, 0.15);
+  --button-bg: rgba(255, 255, 255, 0.9);
+  --button-color: #11998e;
+}
+*/
+
+/* THEME 4: Orange/Pink (Uncomment to use) */
+/*
+:root {
+  --primary-gradient-start: #ff6b6b;
+  --primary-gradient-end: #ffa500;
+  --accent-color: #ffeb3b;
+  --text-primary: #fff;
+  --card-bg: rgba(255, 255, 255, 0.15);
+  --button-bg: rgba(255, 255, 255, 0.9);
+  --button-color: #ff6b6b;
+}
+*/
+
+/* THEME 5: Dark/Purple (Uncomment to use) */
+/*
+:root {
+  --primary-gradient-start: #1a1a2e;
+  --primary-gradient-end: #16213e;
+  --accent-color: #9d4edd;
+  --text-primary: #fff;
+  --card-bg: rgba(157, 78, 221, 0.15);
+  --button-bg: rgba(157, 78, 221, 0.9);
+  --button-color: #fff;
+}
+*/
+
+/* ============ MAIN STYLES ============ */
 
 body {
   height: 100vh;
-  background: linear-gradient(135deg, #3a1c71, #d76d77, #ffaf7b);
+  margin: 0;
   display: flex;
   justify-content: center;
   align-items: center;
+  background: linear-gradient(135deg, var(--primary-gradient-start), var(--primary-gradient-end)); /* Uses color variables */
+  font-family: Arial, sans-serif;
+  color: var(--text-primary); /* Uses color variable */
 }
 
-.card {
-  width: 360px;
-  background: rgba(255, 255, 255, 0.18);
-  backdrop-filter: blur(14px);
-  border-radius: 20px;
+.game-card {
+  background: var(--card-bg); /* Uses color variable */
   padding: 30px;
+  border-radius: 20px;
+  width: 350px;
   text-align: center;
-  color: #fff;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.35);
+  backdrop-filter: blur(10px);
 }
 
-.card h2 {
+h1 {
+  margin-bottom: 10px;
+  font-size: 3em;
+}
+
+#message {
   margin-bottom: 20px;
-  font-size: 26px;
 }
 
-.input-group {
-  margin-bottom: 15px;
-}
-
+/* Input fields for login/register */
 input {
   width: 100%;
-  padding: 12px 14px;
-  border-radius: 12px;
+  padding: 12px;
+  margin: 10px 0;
   border: none;
-  outline: none;
-  font-size: 15px;
+  border-radius: 12px;
+  font-size: 16px;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.9);
+  color: #333; /* Input text color - not using variable */
 }
 
+input:focus {
+  outline: 2px solid var(--primary-gradient-start); /* Uses color variable */
+}
+
+/* Buttons */
 button {
   width: 100%;
   padding: 12px;
-  border-radius: 14px;
+  margin: 8px 0;
   border: none;
-  background: rgba(255, 255, 255, 0.35);
-  color: #fff;
+  border-radius: 12px;
   font-size: 16px;
   cursor: pointer;
-  transition: 0.25s;
+  background: var(--button-bg); /* Uses color variable */
+  color: var(--button-color); /* Uses color variable */
+  font-weight: bold;
+  transition: all 0.3s;
 }
 
 button:hover {
-  background: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 1);
   transform: translateY(-2px);
 }
 
-.link {
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.buttons button {
+  width: 100%;
+  padding: 15px;
+  margin: 8px 0;
+  font-size: 18px;
+}
+
+#result {
+  margin-top: 20px;
+  font-size: 18px;
+  font-weight: bold;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+/* Links */
+a {
+  color: var(--text-primary); /* Uses color variable */
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+a:hover {
+  color: var(--accent-color); /* Uses color variable */
+}
+
+/* User info display */
+.user-info {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 10px 20px;
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  z-index: 100;
+}
+
+.user-info a {
+  color: var(--text-primary); /* Uses color variable */
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.user-info a:hover {
+  text-decoration: underline;
+}
+
+.stats-btn {
+  width: auto;
+  padding: 8px 15px;
+  margin: 0;
+  background: rgba(255, 255, 255, 0.3);
+  color: var(--text-primary); /* Uses color variable */
+  font-size: 14px;
+  border-radius: 8px;
+}
+
+.stats-btn:hover {
+  background: rgba(255, 255, 255, 0.5);
+  transform: none;
+}
+
+/* Opponent Card */
+.opponent-card {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 15px 20px;
+  border-radius: 15px;
+  backdrop-filter: blur(10px);
+  min-width: 250px;
+  z-index: 100;
+}
+
+.opponent-card h3 {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+  color: var(--accent-color); /* Uses color variable */
+}
+
+.opponent-info {
+  text-align: left;
+}
+
+.opponent-name {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.opponent-email {
+  font-size: 14px;
+  opacity: 0.8;
+  margin-bottom: 10px;
+}
+
+.opponent-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.stat-badge {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  display: inline-block;
+}
+
+/* Chat Toggle Button */
+.chat-toggle-btn {
+  width: 100%;
+  padding: 10px;
   margin-top: 15px;
+  background: rgba(255, 255, 255, 0.3);
+  color: var(--text-primary);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: all 0.3s;
+}
+
+.chat-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+/* Chat Box */
+.chat-box {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 350px;
+  height: 450px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.chat-header {
+  background: linear-gradient(135deg, var(--primary-gradient-start), var(--primary-gradient-end));
+  color: var(--text-primary);
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chat-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.chat-close {
+  cursor: pointer;
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.chat-close:hover {
+  color: var(--accent-color);
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 15px;
+  background: #f5f5f5;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chat-loading {
+  text-align: center;
+  color: #999;
+  padding: 20px;
+  font-style: italic;
+}
+
+.chat-message {
+  max-width: 70%;
+  padding: 10px 15px;
+  border-radius: 15px;
+  word-wrap: break-word;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chat-message.own {
+  align-self: flex-end;
+  background: linear-gradient(135deg, var(--primary-gradient-start), var(--primary-gradient-end));
+  color: white;
+  border-bottom-right-radius: 5px;
+}
+
+.chat-message.other {
+  align-self: flex-start;
+  background: #e0e0e0;
+  color: #333;
+  border-bottom-left-radius: 5px;
+}
+
+.chat-message-header {
+  font-size: 11px;
+  font-weight: bold;
+  margin-bottom: 4px;
+  opacity: 0.8;
+}
+
+.chat-message-text {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.chat-message-time {
+  font-size: 10px;
+  opacity: 0.6;
+  margin-top: 4px;
+  text-align: right;
+}
+
+.chat-input-container {
+  display: flex;
+  padding: 10px;
+  background: white;
+  border-top: 1px solid #ddd;
+}
+
+.chat-input-container input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  font-size: 14px;
+  margin: 0;
+  outline: none;
+}
+
+.chat-input-container input:focus {
+  border-color: var(--primary-gradient-start);
+}
+
+.chat-input-container button {
+  margin-left: 10px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, var(--primary-gradient-start), var(--primary-gradient-end));
+  color: white;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: bold;
+  width: auto;
+}
+
+.chat-input-container button:hover {
+  opacity: 0.9;
+  transform: none;
+}
+
+/* Modal */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(5px);
+}
+
+.modal-content {
+  background: linear-gradient(135deg, var(--primary-gradient-start), var(--primary-gradient-end)); /* Uses color variables */
+  margin: 5% auto;
+  padding: 30px;
+  border-radius: 20px;
+  width: 80%;
+  max-width: 600px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.close {
+  color: var(--text-primary); /* Uses color variable */
+  float: right;
+  font-size: 35px;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 20px;
+}
+
+.close:hover {
+  color: var(--accent-color); /* Uses color variable */
+}
+
+.modal-content h2 {
+  margin-top: 20px;
+  margin-bottom: 15px;
+  color: var(--text-primary); /* Uses color variable */
+}
+
+/* Profile Container */
+.profile-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.profile-item {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 15px;
+  border-radius: 12px;
+  text-align: left;
+  backdrop-filter: blur(10px);
+}
+
+.profile-label {
+  font-size: 12px;
+  opacity: 0.8;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.profile-value {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.profile-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.profile-stat-card {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 15px;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.profile-stat-value {
+  font-size: 28px;
+  font-weight: bold;
+  color: var(--accent-color); /* Uses color variable */
+  margin-bottom: 5px;
+}
+
+.profile-stat-label {
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+/* Stats Container */
+.stats-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.stat-item {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 20px;
+  border-radius: 15px;
+  text-align: center;
+  backdrop-filter: blur(10px);
+}
+
+.stat-label {
+  font-size: 14px;
+  opacity: 0.9;
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: bold;
+  color: var(--accent-color); /* Uses color variable */
+}
+
+/* Leaderboard */
+.leaderboard-container {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  padding: 15px;
+  backdrop-filter: blur(10px);
+}
+
+.leaderboard-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  margin: 8px 0;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  transition: all 0.3s;
+}
+
+.leaderboard-item:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateX(5px);
+}
+
+.leaderboard-rank {
+  font-size: 20px;
+  font-weight: bold;
+  width: 40px;
+}
+
+.leaderboard-name {
+  flex: 1;
+  text-align: left;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.leaderboard-stats {
+  display: flex;
+  gap: 10px;
   font-size: 14px;
 }
 
-.link a {
-  color: #fff;
-  text-decoration: underline;
+.leaderboard-stat {
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 5px;
+}
+
+.gold {
+  color: #ffd700;
+}
+
+.silver {
+  color: #c0c0c0;
+}
+
+.bronze {
+  color: #cd7f32;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .opponent-card {
+    position: static;
+    margin: 20px auto;
+    max-width: 350px;
+  }
+  
+  .user-info {
+    position: static;
+    margin: 20px auto;
+    max-width: 350px;
+    justify-content: center;
+  }
+  
+  .modal-content {
+    width: 95%;
+    margin: 10% auto;
+  }
+  
+  .chat-box {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    width: 100%;
+    height: 60vh;
+    border-radius: 15px 15px 0 0;
+  }
 }
