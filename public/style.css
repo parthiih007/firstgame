@@ -3,7 +3,7 @@
 /* To change colors, comment current and uncomment desired theme below */
 
 /* THEME 1: Purple/Red (CURRENT - ACTIVE) */
-:root {
+/* :root {
   --primary-gradient-start: #7b4397;
   --primary-gradient-end: #dc2430;
   --accent-color: #ffd700;
@@ -11,6 +11,16 @@
   --card-bg: rgba(255, 255, 255, 0.15);
   --button-bg: rgba(255, 255, 255, 0.9);
   --button-color: #7b4397;
+} */
+
+:root {
+  --primary-gradient-start: #e5d9eb;
+  --primary-gradient-end: #e2dfdf;
+  --accent-color: #f0eee4;
+  --text-primary: #fff;
+  --card-bg: rgba(255, 255, 255, 0.15);
+  --button-bg: rgba(255, 255, 255, 0.9);
+  --button-color: #ebdff1;
 }
 
 /* THEME 2: Blue/Cyan (Uncomment to use) */
