@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Select Game Mode</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- User Info Header -->
+  <div class="user-info">
+    <span id="username">Loading...</span>
+    <span id="onlineCount" style="margin-left: 15px;">👥 0 online</span>
+    <button class="stats-btn" onclick="window.location.href='game.html'">Back</button>
+    <a href="/logout">Logout</a>
+  </div>
+
+  <!-- Mode Selection -->
+  <div class="mode-selection-container">
+    <h1>🎮 Choose Game Mode</h1>
+    
+    <div class="mode-cards">
+      <!-- Random Match -->
+      <div class="mode-card" onclick="selectMode('random')">
+        <div class="mode-icon">🎲</div>
+        <h2>Random Match</h2>
+        <p>Play with a random opponent online</p>
+        <div class="mode-tag">Quick & Easy</div>
+      </div>
+
+      <!-- Play with Friend -->
+      <div class="mode-card" onclick="selectMode('friend')">
+        <div class="mode-icon">👥</div>
+        <h2>Play with Friend</h2>
+        <p>Challenge a specific online player</p>
+        <div class="mode-tag">Social</div>
+      </div>
+
+      <!-- Play with Computer -->
+      <div class="mode-card" onclick="selectMode('computer')">
+        <div class="mode-icon">🤖</div>
+        <h2>Play with Computer</h2>
+        <p>Practice against AI opponent</p>
+        <div class="mode-tag">Practice Mode</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Friend Selection Modal -->
+  <div id="friendModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <span class="close" onclick="closeFriendModal()">&times;</span>
+      <h2>👥 Select a Friend</h2>
+      
+      <div id="onlineUsersList" class="online-users-list">
+        <div class="loading-spinner">Loading online users...</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    let username = "";
+    
+    socket.on("connect", () => {
+      console.log("Connected to server");
+    });
+
+    socket.on("playerInfo", data => {
+      username = data.username;
+      document.getElementById("username").innerText = `👤 ${username}`;
+      loadProfile();
+    });
+
+    socket.on("onlineUsersUpdate", count => {
+      document.getElementById("onlineCount").innerText = `👥 ${count} online`;
+    });
+
+    socket.on("unauthorized", () => {
+      window.location.href = "/login.html";
+    });
+
+    async function loadProfile() {
+      try {
+        const response = await fetch('/api/profile');
+        const data = await response.json();
+        if (data.success) {
+          username = data.profile.username;
+        }
+      } catch (error) {
+        console.error("Profile error:", error);
+      }
+    }
+
+    function selectMode(mode) {
+      if (mode === 'random') {
+        // Redirect to game and auto-join random match
+        sessionStorage.setItem('gameMode', 'random');
+        window.location.href = 'index.html';
+      } else if (mode === 'friend') {
+        // Show friend selection modal
+        loadOnlineUsers();
+        document.getElementById('friendModal').style.display = 'block';
+      } else if (mode === 'computer') {
+        // Redirect to game with computer mode
+        sessionStorage.setItem('gameMode', 'computer');
+        window.location.href = 'index.html';
+      }
+    }
+
+    async function loadOnlineUsers() {
+      try {
+        const response = await fetch('/api/online-users');
+        const data = await response.json();
+        
+        const listDiv = document.getElementById('onlineUsersList');
+        
+        if (data.success && data.users.length > 0) {
+          listDiv.innerHTML = data.users.map(user => `
+            <div class="online-user-item" onclick="inviteUser('${user.userId}', '${user.username}')">
+              <div class="online-user-info">
+                <div class="online-user-name">${user.username}</div>
+                <div class="online-user-email">${user.email}</div>
+                <div class="online-user-stats">
+                  <span>🏆 ${user.wins}</span>
+                  <span>❌ ${user.losses}</span>
+                  <span>😐 ${user.draws}</span>
+                </div>
+              </div>
+              <div class="online-user-status ${user.status === 'available' ? 'available' : 'busy'}">
+                ${user.status === 'available' ? '✅ Available' : '🎮 In Game'}
+              </div>
+            </div>
+          `).join('');
+        } else {
+          listDiv.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No other players online right now</p>';
+        }
+      } catch (error) {
+        console.error("Load users error:", error);
+        document.getElementById('onlineUsersList').innerHTML = '<p style="text-align: center; color: #ff6b6b;">Failed to load online users</p>';
+      }
+    }
+
+    function inviteUser(userId, username) {
+      sessionStorage.setItem('gameMode', 'friend');
+      sessionStorage.setItem('inviteUserId', userId);
+      sessionStorage.setItem('inviteUsername', username);
+      window.location.href = 'index.html';
+    }
+
+    function closeFriendModal() {
+      document.getElementById('friendModal').style.display = 'none';
+    }
+
+    // Close modal on outside click
+    window.onclick = function(event) {
+      const modal = document.getElementById('friendModal');
+      if (event.target === modal) {
+        modal.style.display = 'none';
+      }
+    }
+
+    window.addEventListener('load', () => {
+      loadProfile();
+    });
+  </script>
+</body>
+</html>

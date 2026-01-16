@@ -6,6 +6,7 @@ let username = "";
 let opponentData = null;
 let opponentId = null;
 let currentUserId = null;
+let gameMode = null;
 
 const message = document.getElementById("message");
 const result = document.getElementById("result");
@@ -20,6 +21,36 @@ const chatInput = document.getElementById("chatInput");
 
 buttons.forEach(btn => btn.disabled = true);
 
+// Check game mode from session storage
+window.addEventListener('load', () => {
+  gameMode = sessionStorage.getItem('gameMode');
+  console.log("🎮 Game Mode:", gameMode);
+  
+  if (!gameMode) {
+    // No mode selected, redirect to mode selection
+    window.location.href = 'mode-selection.html';
+    return;
+  }
+  
+  loadProfile();
+  
+  // Auto-join based on mode after connection
+  setTimeout(() => {
+    if (gameMode === 'random') {
+      socket.emit('joinRandomMatch');
+    } else if (gameMode === 'friend') {
+      const inviteUserId = sessionStorage.getItem('inviteUserId');
+      const inviteUsername = sessionStorage.getItem('inviteUsername');
+      if (inviteUserId) {
+        socket.emit('inviteFriend', inviteUserId);
+        message.innerText = `Sending invitation to ${inviteUsername}...`;
+      }
+    } else if (gameMode === 'computer') {
+      socket.emit('playWithComputer');
+    }
+  }, 1000);
+});
+
 socket.on("connect", () => {
   console.log("🟢 Connected:", socket.id);
 });
@@ -27,7 +58,11 @@ socket.on("connect", () => {
 socket.on("playerInfo", data => {
   username = data.username;
   usernameDisplay.innerText = `👤 ${username}`;
-  loadProfile();
+});
+
+// Friend invite received
+socket.on("friendInvite", data => {
+  showInviteNotification(data);
 });
 
 socket.on("matchFound", data => {
@@ -45,12 +80,20 @@ socket.on("matchFound", data => {
   
   message.innerText = `Matched with ${opponentData.username}!`;
   
-  loadChatHistory();
+  // Load chat history only for non-computer games
+  if (opponentId !== 'COMPUTER') {
+    loadChatHistory();
+  }
+  
+  // Clear session storage
+  sessionStorage.removeItem('gameMode');
+  sessionStorage.removeItem('inviteUserId');
+  sessionStorage.removeItem('inviteUsername');
 });
 
 socket.on("playerNumber", num => {
   playerNumber = num;
-  if (num === 1) {
+  if (num === 1 && !gameMode) {
     message.innerText = "Waiting for opponent...";
     opponentCard.style.display = "none";
   }
@@ -102,13 +145,15 @@ socket.on("result", data => {
 socket.on("message", msg => {
   message.innerText = msg;
   
-  if (msg.includes("disconnected") || msg.includes("Waiting")) {
+  if (msg.includes("disconnected")) {
     buttons.forEach(btn => btn.disabled = true);
     result.innerHTML = "";
-    opponentCard.style.display = "none";
-    chatBox.style.display = "none";
-    opponentData = null;
-    opponentId = null;
+    
+    setTimeout(() => {
+      if (confirm("Opponent disconnected. Return to mode selection?")) {
+        window.location.href = 'mode-selection.html';
+      }
+    }, 2000);
   }
 });
 
@@ -129,7 +174,6 @@ socket.on("unauthorized", () => {
 socket.on("disconnect", () => {
   message.innerText = "Connection lost...";
   buttons.forEach(btn => btn.disabled = true);
-  opponentCard.style.display = "none";
 });
 
 function play(choice) {
@@ -142,6 +186,38 @@ function play(choice) {
   message.innerText = "Waiting for opponent...";
   result.innerHTML = "<div style='opacity: 0.5;'>⏳ Waiting...</div>";
   socket.emit("move", choice);
+}
+
+function showInviteNotification(data) {
+  const notification = document.createElement('div');
+  notification.className = 'invite-notification';
+  notification.innerHTML = `
+    <h3>🎮 Game Invitation</h3>
+    <p><b>${data.from}</b> wants to play with you!</p>
+    <div class="invite-buttons">
+      <button class="accept-btn" onclick="acceptInvite('${data.inviteId}')">✅ Accept</button>
+      <button class="decline-btn" onclick="declineInvite('${data.inviteId}')">❌ Decline</button>
+    </div>
+  `;
+  
+  document.body.appendChild(notification);
+  
+  // Auto-remove after 30 seconds
+  setTimeout(() => {
+    if (notification.parentNode) {
+      notification.remove();
+    }
+  }, 30000);
+}
+
+function acceptInvite(inviteId) {
+  socket.emit('acceptInvite', inviteId);
+  document.querySelectorAll('.invite-notification').forEach(n => n.remove());
+}
+
+function declineInvite(inviteId) {
+  socket.emit('declineInvite', inviteId);
+  document.querySelectorAll('.invite-notification').forEach(n => n.remove());
 }
 
 function toggleProfile() {
@@ -158,11 +234,23 @@ function toggleStats() {
 }
 
 function toggleChat() {
+  // Don't allow chat with computer
+  if (opponentId === 'COMPUTER') {
+    alert("🤖 Computer doesn't chat! Try playing with a real opponent!");
+    return;
+  }
+  
   if (chatBox.style.display === "none" || chatBox.style.display === "") {
     chatBox.style.display = "flex";
     scrollChatToBottom();
   } else {
     chatBox.style.display = "none";
+  }
+}
+
+function backToModeSelection() {
+  if (confirm("Leave this game and return to mode selection?")) {
+    window.location.href = 'mode-selection.html';
   }
 }
 
@@ -259,7 +347,7 @@ async function loadLeaderboard() {
 }
 
 async function loadChatHistory() {
-  if (!opponentId) return;
+  if (!opponentId || opponentId === 'COMPUTER') return;
   
   try {
     const response = await fetch(`/api/chat-history/${opponentId}`);
@@ -306,8 +394,6 @@ function displayChatMessage(data, shouldScroll = true) {
 function sendChatMessage() {
   const msg = chatInput.value.trim();
   
-  console.log("📤 Sending:", msg);
-  
   if (!msg) return;
   if (msg.length > 500) {
     alert("Message too long (max 500 chars)");
@@ -333,7 +419,3 @@ function escapeHtml(text) {
   div.textContent = text;
   return div.innerHTML;
 }
-
-window.addEventListener('load', () => {
-  loadProfile();
-});
