@@ -3,7 +3,7 @@
 /* To change colors, comment current and uncomment desired theme below */
 
 /* THEME 1: Purple/Red (CURRENT - ACTIVE) */
-/* :root {
+:root {
   --primary-gradient-start: #7b4397;
   --primary-gradient-end: #dc2430;
   --accent-color: #ffd700;
@@ -11,16 +11,6 @@
   --card-bg: rgba(255, 255, 255, 0.15);
   --button-bg: rgba(255, 255, 255, 0.9);
   --button-color: #7b4397;
-} */
-
-:root {
-  --primary-gradient-start: #e5d9eb;
-  --primary-gradient-end: #e2dfdf;
-  --accent-color: #f0eee4;
-  --text-primary: #fff;
-  --card-bg: rgba(255, 255, 255, 0.15);
-  --button-bg: rgba(255, 255, 255, 0.9);
-  --button-color: #ebdff1;
 }
 
 /* THEME 2: Blue/Cyan (Uncomment to use) */
@@ -620,6 +610,203 @@ a:hover {
 
 .bronze {
   color: #cd7f32;
+}
+
+/* ============ MODE SELECTION STYLES ============ */
+
+.mode-selection-container {
+  text-align: center;
+  padding: 40px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.mode-selection-container h1 {
+  font-size: 3em;
+  margin-bottom: 50px;
+  color: var(--text-primary);
+}
+
+.mode-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  margin-top: 30px;
+}
+
+.mode-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 40px 30px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 3px solid transparent;
+}
+
+.mode-card:hover {
+  transform: translateY(-10px);
+  border-color: var(--accent-color);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+}
+
+.mode-icon {
+  font-size: 80px;
+  margin-bottom: 20px;
+}
+
+.mode-card h2 {
+  font-size: 28px;
+  margin: 15px 0;
+  color: var(--text-primary);
+}
+
+.mode-card p {
+  font-size: 16px;
+  opacity: 0.9;
+  margin-bottom: 20px;
+}
+
+.mode-tag {
+  display: inline-block;
+  background: var(--accent-color);
+  color: #333;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+/* Online Users List */
+.online-users-list {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.online-user-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  margin: 10px 0;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.online-user-item:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateX(5px);
+}
+
+.online-user-info {
+  flex: 1;
+  text-align: left;
+}
+
+.online-user-name {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.online-user-email {
+  font-size: 14px;
+  opacity: 0.8;
+  margin-bottom: 8px;
+}
+
+.online-user-stats {
+  display: flex;
+  gap: 15px;
+  font-size: 13px;
+}
+
+.online-user-status {
+  padding: 8px 15px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.online-user-status.available {
+  background: #4caf50;
+  color: white;
+}
+
+.online-user-status.busy {
+  background: #ff9800;
+  color: white;
+}
+
+.loading-spinner {
+  text-align: center;
+  padding: 40px;
+  font-size: 16px;
+  opacity: 0.7;
+}
+
+/* Invite Notification */
+.invite-notification {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  background: linear-gradient(135deg, var(--primary-gradient-start), var(--primary-gradient-end));
+  color: white;
+  padding: 20px 25px;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  z-index: 2000;
+  animation: slideInRight 0.3s ease;
+  min-width: 300px;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.invite-notification h3 {
+  margin: 0 0 10px 0;
+  font-size: 18px;
+}
+
+.invite-notification p {
+  margin: 0 0 15px 0;
+  opacity: 0.9;
+}
+
+.invite-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.invite-buttons button {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.accept-btn {
+  background: #4caf50;
+  color: white;
+}
+
+.decline-btn {
+  background: #f44336;
+  color: white;
 }
 
 /* Responsive Design */

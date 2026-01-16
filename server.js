@@ -11,15 +11,12 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// MongoDB connection
 mongoose.connect("mongodb://localhost:27017/rockpaperscissors")
 .then(() => console.log("✅ MongoDB connected"))
 .catch(err => console.error("❌ MongoDB error:", err));
 
-// Middleware
 app.use(express.json());
 
-// Session configuration
 const sessionMiddleware = session({
   secret: "your-secret-key-change-this-to-something-random",
   resave: false,
@@ -34,10 +31,8 @@ const sessionMiddleware = session({
 app.use(sessionMiddleware);
 app.use(express.static("public"));
 
-// Track active sessions per user
 let activeSessions = {};
 
-// Middleware to check authentication
 function requireAuth(req, res, next) {
   if (req.session && req.session.userId) {
     next();
@@ -46,7 +41,6 @@ function requireAuth(req, res, next) {
   }
 }
 
-// Email validation
 function isValidEmail(email) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
@@ -54,7 +48,6 @@ function isValidEmail(email) {
 
 // ROUTES
 
-// Register
 app.post("/register", async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -93,8 +86,7 @@ app.post("/register", async (req, res) => {
     });
 
     await user.save();
-    console.log("✅ User registered:", username, email);
-
+    console.log("✅ User registered:", username);
     res.json({ success: true });
   } catch (error) {
     console.error("Registration error:", error);
@@ -102,7 +94,6 @@ app.post("/register", async (req, res) => {
   }
 });
 
-// Login
 app.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -138,7 +129,6 @@ app.post("/login", async (req, res) => {
     
     req.session.save((err) => {
       if (err) {
-        console.error("Session save error:", err);
         return res.json({ success: false, message: "Session error" });
       }
       
@@ -152,7 +142,6 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// Get user profile
 app.get("/api/profile", requireAuth, async (req, res) => {
   try {
     const user = await User.findById(req.session.userId).select('-password');
@@ -181,7 +170,6 @@ app.get("/api/profile", requireAuth, async (req, res) => {
   }
 });
 
-// Get user stats
 app.get("/api/stats", requireAuth, async (req, res) => {
   try {
     const user = await User.findById(req.session.userId).select('-password');
@@ -205,7 +193,6 @@ app.get("/api/stats", requireAuth, async (req, res) => {
   }
 });
 
-// Get leaderboard
 app.get("/api/leaderboard", requireAuth, async (req, res) => {
   try {
     const users = await User.find()
@@ -231,7 +218,35 @@ app.get("/api/leaderboard", requireAuth, async (req, res) => {
   }
 });
 
-// Get chat history
+// Get online users (for friend mode)
+app.get("/api/online-users", requireAuth, async (req, res) => {
+  try {
+    const currentUserId = req.session.userId;
+    const onlineUserIds = Object.keys(onlineUsers).filter(id => id !== currentUserId);
+    
+    const users = [];
+    for (const userId of onlineUserIds) {
+      const user = await User.findById(userId).select('username email wins losses draws');
+      if (user) {
+        users.push({
+          userId: user._id.toString(),
+          username: user.username,
+          email: user.email,
+          wins: user.wins,
+          losses: user.losses,
+          draws: user.draws,
+          status: onlineUsers[userId].gameMode || 'available'
+        });
+      }
+    }
+    
+    res.json({ success: true, users });
+  } catch (error) {
+    console.error("Online users error:", error);
+    res.json({ success: false, message: "Server error" });
+  }
+});
+
 app.get("/api/chat-history/:opponentId", requireAuth, async (req, res) => {
   try {
     const userId = req.session.userId;
@@ -250,25 +265,21 @@ app.get("/api/chat-history/:opponentId", requireAuth, async (req, res) => {
   }
 });
 
-// Logout
 app.get("/logout", (req, res) => {
   const userId = req.session.userId;
   
   if (userId && activeSessions[userId]) {
     delete activeSessions[userId];
-    console.log("👋 User logged out:", req.session.username);
   }
   
   req.session.destroy();
   res.redirect("/login.html");
 });
 
-// Protected route
 app.get("/game", requireAuth, (req, res) => {
   res.sendFile(__dirname + "/public/index.html");
 });
 
-// Redirect root
 app.get("/", (req, res) => {
   if (req.session && req.session.userId) {
     res.redirect("/game");
@@ -277,24 +288,34 @@ app.get("/", (req, res) => {
   }
 });
 
-// GAME LOGIC
+// GAME LOGIC WITH 3 MODES
 
-let games = {};
-let waitingPlayer = null;
-let playerToGame = {};
+let games = {}; // gameId -> game data
+let waitingPlayer = null; // For random mode
+let playerToGame = {}; // socketId -> gameId
+let onlineUsers = {}; // userId -> { socketId, username, gameMode }
+let friendInvites = {}; // inviteId -> { from, to, fromSocketId }
 
 function generateGameId() {
   return 'game_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 }
 
-// Socket.IO
+function generateInviteId() {
+  return 'invite_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
+// AI opponent for computer mode
+function getComputerMove() {
+  const moves = ['rock', 'paper', 'scissors'];
+  return moves[Math.floor(Math.random() * 3)];
+}
+
 io.engine.use(sessionMiddleware);
 
 io.on("connection", socket => {
   const session = socket.request.session;
   
   if (!session || !session.userId) {
-    console.log("❌ Unauthorized connection");
     socket.emit("unauthorized");
     socket.disconnect();
     return;
@@ -304,92 +325,184 @@ io.on("connection", socket => {
   const userId = session.userId;
   const email = session.email;
   
-  console.log("🔥 Player connected:", username, socket.id);
+  // Add to online users
+  onlineUsers[userId] = {
+    socketId: socket.id,
+    username: username,
+    email: email,
+    gameMode: null
+  };
+  
+  console.log("🔥 Player connected:", username);
+  
+  // Broadcast online users update
+  io.emit("onlineUsersUpdate", Object.keys(onlineUsers).length);
+  
+  socket.emit("playerInfo", { username, email });
 
-  if (waitingPlayer && waitingPlayer !== socket.id) {
-    const gameId = generateGameId();
-    const player1Socket = waitingPlayer;
-    const player2Socket = socket.id;
+  // MODE 1: RANDOM MATCH
+  socket.on("joinRandomMatch", () => {
+    console.log("🎲", username, "joining random match");
     
-    const player1SocketObj = io.sockets.sockets.get(player1Socket);
-    if (!player1SocketObj) {
-      waitingPlayer = socket.id;
-      socket.emit("playerNumber", 1);
-      socket.emit("playerInfo", { username, email });
-      socket.emit("message", "Waiting for opponent...");
-      return;
-    }
+    onlineUsers[userId].gameMode = 'searching';
     
-    const player1Session = player1SocketObj.request.session;
-    const player1Username = player1Session.username;
-    const player1UserId = player1Session.userId;
-    const player1Email = player1Session.email;
-    
-    games[gameId] = {
-      player1: {
+    if (waitingPlayer && waitingPlayer !== socket.id) {
+      const gameId = generateGameId();
+      const player1Socket = waitingPlayer;
+      const player2Socket = socket.id;
+      
+      const player1SocketObj = io.sockets.sockets.get(player1Socket);
+      if (!player1SocketObj) {
+        waitingPlayer = socket.id;
+        socket.emit("playerNumber", 1);
+        socket.emit("message", "Waiting for opponent...");
+        return;
+      }
+      
+      const player1Session = player1SocketObj.request.session;
+      const player1Username = player1Session.username;
+      const player1UserId = player1Session.userId;
+      const player1Email = player1Session.email;
+      
+      createGame(gameId, {
         socketId: player1Socket,
         userId: player1UserId,
         username: player1Username,
         email: player1Email
-      },
-      player2: {
+      }, {
         socketId: player2Socket,
         userId: userId,
         username: username,
         email: email
+      }, 'random');
+      
+      waitingPlayer = null;
+    } else {
+      waitingPlayer = socket.id;
+      socket.emit("playerNumber", 1);
+      socket.emit("message", "Waiting for opponent...");
+    }
+  });
+
+  // MODE 2: PLAY WITH FRIEND
+  socket.on("inviteFriend", (friendUserId) => {
+    console.log("💌", username, "inviting", friendUserId);
+    
+    const friend = onlineUsers[friendUserId];
+    if (!friend) {
+      socket.emit("error", "User not online");
+      return;
+    }
+    
+    if (friend.gameMode === 'playing') {
+      socket.emit("error", "User is already in a game");
+      return;
+    }
+    
+    const inviteId = generateInviteId();
+    friendInvites[inviteId] = {
+      from: userId,
+      to: friendUserId,
+      fromSocketId: socket.id,
+      fromUsername: username
+    };
+    
+    io.to(friend.socketId).emit("friendInvite", {
+      inviteId: inviteId,
+      from: username,
+      fromUserId: userId
+    });
+    
+    socket.emit("message", `Invitation sent to ${friend.username}`);
+  });
+
+  socket.on("acceptInvite", (inviteId) => {
+    const invite = friendInvites[inviteId];
+    if (!invite) {
+      socket.emit("error", "Invite not found or expired");
+      return;
+    }
+    
+    const gameId = generateGameId();
+    
+    const player1 = onlineUsers[invite.from];
+    const player2 = onlineUsers[userId];
+    
+    if (!player1 || !player2) {
+      socket.emit("error", "Player not available");
+      delete friendInvites[inviteId];
+      return;
+    }
+    
+    createGame(gameId, {
+      socketId: player1.socketId,
+      userId: invite.from,
+      username: player1.username,
+      email: player1.email
+    }, {
+      socketId: socket.id,
+      userId: userId,
+      username: username,
+      email: email
+    }, 'friend');
+    
+    delete friendInvites[inviteId];
+  });
+
+  socket.on("declineInvite", (inviteId) => {
+    const invite = friendInvites[inviteId];
+    if (invite) {
+      const sender = onlineUsers[invite.from];
+      if (sender) {
+        io.to(sender.socketId).emit("message", `${username} declined your invitation`);
+      }
+      delete friendInvites[inviteId];
+    }
+  });
+
+  // MODE 3: PLAY WITH COMPUTER
+  socket.on("playWithComputer", () => {
+    console.log("🤖", username, "playing with computer");
+    
+    const gameId = generateGameId();
+    
+    games[gameId] = {
+      gameMode: 'computer',
+      player1: {
+        socketId: socket.id,
+        userId: userId,
+        username: username,
+        email: email
+      },
+      player2: {
+        socketId: 'COMPUTER',
+        userId: 'COMPUTER',
+        username: 'Computer',
+        email: 'ai@computer.bot'
       },
       moves: {}
     };
     
-    playerToGame[player1Socket] = gameId;
-    playerToGame[player2Socket] = gameId;
+    playerToGame[socket.id] = gameId;
+    onlineUsers[userId].gameMode = 'playing';
     
-    waitingPlayer = null;
-    
-    Promise.all([
-      User.findById(player1UserId),
-      User.findById(userId)
-    ]).then(([p1User, p2User]) => {
-      if (!p1User || !p2User) return;
-      
-      const player1Stats = {
-        username: player1Username,
-        email: player1Email,
-        wins: p1User.wins || 0,
-        losses: p1User.losses || 0,
-        draws: p1User.draws || 0
-      };
-      
-      const player2Stats = {
-        username: username,
-        email: email,
-        wins: p2User.wins || 0,
-        losses: p2User.losses || 0,
-        draws: p2User.draws || 0
-      };
-      
-      io.to(player1Socket).emit("playerNumber", 1);
-      io.to(player1Socket).emit("playerInfo", { username: player1Username, email: player1Email });
-      io.to(player1Socket).emit("matchFound", { opponent: player2Stats, opponentId: userId });
-      
-      io.to(player2Socket).emit("playerNumber", 2);
-      io.to(player2Socket).emit("playerInfo", { username: username, email: email });
-      io.to(player2Socket).emit("matchFound", { opponent: player1Stats, opponentId: player1UserId });
-      
-      io.to(player1Socket).emit("startGame");
-      io.to(player2Socket).emit("startGame");
-      
-      console.log(`🚀 Game ${gameId} started: ${player1Username} vs ${username}`);
-    });
-    
-  } else {
-    waitingPlayer = socket.id;
     socket.emit("playerNumber", 1);
-    socket.emit("playerInfo", { username, email });
-    socket.emit("message", "Waiting for opponent...");
-    console.log("🎮", username, "waiting");
-  }
+    socket.emit("matchFound", {
+      opponent: {
+        username: 'Computer',
+        email: '🤖 AI Opponent',
+        wins: 999,
+        losses: 0,
+        draws: 0
+      },
+      opponentId: 'COMPUTER'
+    });
+    socket.emit("startGame");
+    
+    console.log("🤖 Computer game started for", username);
+  });
 
+  // Handle moves
   socket.on("move", choice => {
     const gameId = playerToGame[socket.id];
     if (!gameId || !games[gameId]) return;
@@ -400,6 +513,11 @@ io.on("connection", socket => {
     
     game.moves[playerNum] = typeof choice === "object" ? choice.choice : choice;
     
+    // If computer mode, instantly generate computer move
+    if (game.gameMode === 'computer') {
+      game.moves[2] = getComputerMove();
+    }
+    
     if (game.moves[1] && game.moves[2]) {
       const winner = getWinner(game.moves[1], game.moves[2]);
       
@@ -409,40 +527,54 @@ io.on("connection", socket => {
         winner
       });
       
-      io.to(game.player2.socketId).emit("result", {
-        p1: game.moves[1],
-        p2: game.moves[2],
-        winner
-      });
+      if (game.player2.socketId !== 'COMPUTER') {
+        io.to(game.player2.socketId).emit("result", {
+          p1: game.moves[1],
+          p2: game.moves[2],
+          winner
+        });
+      }
       
-      updateScores(game, winner);
+      // Only update scores for real players
+      if (game.gameMode !== 'computer') {
+        updateScores(game, winner);
+      } else {
+        // Update only player's score in computer mode
+        updateComputerGameScore(game.player1.userId, winner);
+      }
+      
       game.moves = {};
     }
   });
 
+  // Chat
   socket.on("chatMessage", async (data) => {
-    console.log("\n💬 CHAT MESSAGE RECEIVED");
-    console.log("From:", username);
-    console.log("Data:", data);
-    
     const gameId = playerToGame[socket.id];
     
     if (!gameId || !games[gameId]) {
-      console.log("❌ No game found");
-      socket.emit("error", "Game not found");
       return;
     }
     
     const game = games[gameId];
+    
+    // No chat with computer
+    if (game.gameMode === 'computer') {
+      socket.emit("chatMessage", {
+        senderId: 'COMPUTER',
+        senderUsername: 'Computer',
+        message: "🤖 Beep boop! I'm a computer, I don't chat!",
+        timestamp: new Date()
+      });
+      return;
+    }
+    
     const isPlayer1 = game.player1.socketId === socket.id;
     const sender = isPlayer1 ? game.player1 : game.player2;
     const recipient = isPlayer1 ? game.player2 : game.player1;
     
     const message = data.message.trim();
     
-    if (!message || message.length === 0 || message.length > 500) {
-      return;
-    }
+    if (!message || message.length === 0 || message.length > 500) return;
     
     try {
       const participants = [sender.userId, recipient.userId].sort();
@@ -466,16 +598,16 @@ io.on("connection", socket => {
       
       io.to(game.player1.socketId).emit("chatMessage", messageData);
       io.to(game.player2.socketId).emit("chatMessage", messageData);
-      
-      console.log(`✅ Message sent: ${sender.username}: ${message}`);
     } catch (error) {
       console.error("Chat error:", error);
-      socket.emit("error", "Failed to send message");
     }
   });
 
   socket.on("disconnect", () => {
     console.log("❌ Disconnected:", username);
+    
+    delete onlineUsers[userId];
+    io.emit("onlineUsersUpdate", Object.keys(onlineUsers).length);
     
     if (activeSessions[userId] === session.id) {
       delete activeSessions[userId];
@@ -487,28 +619,87 @@ io.on("connection", socket => {
       waitingPlayer = null;
     }
     
+    // Cancel any pending invites
+    Object.keys(friendInvites).forEach(inviteId => {
+      const invite = friendInvites[inviteId];
+      if (invite.from === userId || invite.to === userId) {
+        delete friendInvites[inviteId];
+      }
+    });
+    
     if (gameId && games[gameId]) {
       const game = games[gameId];
-      const isPlayer1 = game.player1.socketId === socket.id;
-      const opponentSocket = isPlayer1 ? game.player2.socketId : game.player1.socketId;
       
-      io.to(opponentSocket).emit("message", "Opponent disconnected. Finding new match...");
-      
-      delete games[gameId];
-      delete playerToGame[game.player1.socketId];
-      delete playerToGame[game.player2.socketId];
-      
-      const opponentSocketObj = io.sockets.sockets.get(opponentSocket);
-      if (opponentSocketObj) {
-        waitingPlayer = opponentSocket;
-        io.to(opponentSocket).emit("playerNumber", 1);
-        io.to(opponentSocket).emit("message", "Waiting for new opponent...");
+      if (game.gameMode === 'computer') {
+        delete games[gameId];
+        delete playerToGame[socket.id];
+      } else {
+        const isPlayer1 = game.player1.socketId === socket.id;
+        const opponentSocket = isPlayer1 ? game.player2.socketId : game.player1.socketId;
+        
+        io.to(opponentSocket).emit("message", "Opponent disconnected.");
+        
+        delete games[gameId];
+        delete playerToGame[game.player1.socketId];
+        delete playerToGame[game.player2.socketId];
       }
     }
     
     delete playerToGame[socket.id];
   });
 });
+
+function createGame(gameId, player1, player2, mode) {
+  games[gameId] = {
+    gameMode: mode,
+    player1: player1,
+    player2: player2,
+    moves: {}
+  };
+  
+  playerToGame[player1.socketId] = gameId;
+  playerToGame[player2.socketId] = gameId;
+  
+  onlineUsers[player1.userId].gameMode = 'playing';
+  onlineUsers[player2.userId].gameMode = 'playing';
+  
+  Promise.all([
+    User.findById(player1.userId),
+    User.findById(player2.userId)
+  ]).then(([p1User, p2User]) => {
+    const player1Stats = {
+      username: player1.username,
+      email: player1.email,
+      wins: p1User?.wins || 0,
+      losses: p1User?.losses || 0,
+      draws: p1User?.draws || 0
+    };
+    
+    const player2Stats = {
+      username: player2.username,
+      email: player2.email,
+      wins: p2User?.wins || 0,
+      losses: p2User?.losses || 0,
+      draws: p2User?.draws || 0
+    };
+    
+    io.to(player1.socketId).emit("playerNumber", 1);
+    io.to(player1.socketId).emit("matchFound", { 
+      opponent: player2Stats, 
+      opponentId: player2.userId 
+    });
+    io.to(player1.socketId).emit("startGame");
+    
+    io.to(player2.socketId).emit("playerNumber", 2);
+    io.to(player2.socketId).emit("matchFound", { 
+      opponent: player1Stats, 
+      opponentId: player1.userId 
+    });
+    io.to(player2.socketId).emit("startGame");
+    
+    console.log(`🚀 ${mode} game: ${player1.username} vs ${player2.username}`);
+  });
+}
 
 async function updateScores(game, winner) {
   try {
@@ -527,6 +718,20 @@ async function updateScores(game, winner) {
   }
 }
 
+async function updateComputerGameScore(userId, winner) {
+  try {
+    if (winner === 0) {
+      await User.findByIdAndUpdate(userId, { $inc: { draws: 1 } });
+    } else if (winner === 1) {
+      await User.findByIdAndUpdate(userId, { $inc: { wins: 1 } });
+    } else {
+      await User.findByIdAndUpdate(userId, { $inc: { losses: 1 } });
+    }
+  } catch (error) {
+    console.error("Computer game score error:", error);
+  }
+}
+
 function getWinner(p1, p2) {
   if (p1 === p2) return 0;
   if (
@@ -539,4 +744,5 @@ function getWinner(p1, p2) {
 
 server.listen(3000, () => {
   console.log("🚀 Server running at http://localhost:3000");
+  console.log("🎮 3 Game Modes: Random | Friend | Computer");
 });
